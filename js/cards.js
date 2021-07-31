@@ -5,9 +5,14 @@
 
 let width = (window.innerWidth > 0) ? window.innerWidth - 1 : screen.width - 1
 let height = (window.innerHeight > 0) ? window.innerHeight - 1 : screen.height - 1
-let scale = 1000 / width
+let scaleX = 1
+let scaleY = 1
+if(width<720){
+    scaleX =  width/720
+    scaleY =  width/720
+}
 
-const app = new PIXI.Application({ width: width, height: height, autoStart: false, antialias: true,backgroundColor:0x20cd65 })
+const app = new PIXI.Application({ width: width, height: height, autoStart: false, antialias: true, backgroundColor: 0x20cd65 })
 document.body.appendChild(app.view)
 app.stage = new PIXI.display.Stage()
 
@@ -15,13 +20,13 @@ const { loader } = app
 
 
 const camera = new PIXI.projection.Camera3d()
-camera.position.set(app.screen.width / 2, app.screen.height / 2)
-camera.setPlanes(350, 30, 10000)
-camera.euler.x = Math.PI / 10
+camera.position.set(app.screen.width / 2, app.screen.height/ 2+80*scaleY )
+camera.setPlanes(350*scaleX, 30*scaleY, 10000)
+camera.euler.x = 0
 app.stage.addChild(camera)
 
 const cards = new PIXI.projection.Container3d()
-cards.position3d.y = 50
+cards.position3d.y = 50 * scaleY
 // MAKE CARDS LARGER:
 cards.scale3d.set(1.5)
 camera.addChild(cards)
@@ -55,7 +60,7 @@ class CardSprite extends PIXI.projection.Container3d {
         // shadow will be under card
         this.shadow = new PIXI.projection.Sprite3d(tex['black.png'])
         this.shadow.anchor.set(0.5)
-        this.shadow.scale3d.set(0.98)
+        this.shadow.scale3d.set(0.98*scaleX)
         this.shadow.alpha = 0.7
         // TRY IT WITH FILTER:
         this.shadow.filters = [blurFilter]
@@ -71,7 +76,9 @@ class CardSprite extends PIXI.projection.Container3d {
         // construct "inner" from back and face
         this.back = new PIXI.projection.Sprite3d(tex['cover1.png'])
         this.back.anchor.set(0.5)
+        this.back.scale3d.set(scaleX)
         this.face = new PIXI.projection.Container3d()
+        this.face.scale3d.set(scaleX)
         this.inner.addChild(this.back)
         this.inner.addChild(this.face)
         this.code = 0
@@ -91,10 +98,10 @@ class CardSprite extends PIXI.projection.Container3d {
         const sprite2 = new PIXI.projection.Sprite3d(PIXI.Texture.EMPTY)
         const sprite3 = new PIXI.projection.Sprite3d(PIXI.Texture.EMPTY)
         const sprite4 = new PIXI.projection.Sprite3d(PIXI.Texture.EMPTY)
-        sprite2.y = -120
-        sprite2.x = -80
-        sprite3.y = 70
-        sprite3.x = 40
+        sprite2.y = -120 
+        sprite2.x = -80 
+        sprite3.y = 70 
+        sprite3.x = 40 
         sprite4.y = -70
         sprite4.x = -100
 
@@ -136,10 +143,10 @@ class CardSprite extends PIXI.projection.Container3d {
         if (!this.show && inner.euler.y < Math.PI) {
             inner.euler.y = Math.min(Math.PI, inner.euler.y + dt * 5)
         }
-        inner.position3d.z = -Math.sin(inner.euler.y) * this.back.width
+        inner.position3d.z = -Math.sin(inner.euler.y) * this.back.width * scaleY
         // assignment is overriden, so its actually calling euler.copyFrom(this.euler)
         this.shadow.euler = inner.euler
-        if (this.show && inner.euler.y == 0){
+        if (this.show && inner.euler.y == 0) {
             checkLogic(this)
         }
     }
@@ -153,7 +160,7 @@ class CardSprite extends PIXI.projection.Container3d {
             cc = 0
         } else {
             cc = 0
-            if(this.show){
+            if (this.show) {
                 cc = this.code
             }
         }
@@ -189,27 +196,27 @@ function dealHand() {
     currentCard = null
     cards.removeChildren()
     for (let i = 0; i < 5; i++) {
-        let x = 56 * 3
-        let y = -80 * (i-1)
-        let card = newCard(x, y, nextCardCode() , false)
+        let x = 56 * 2 * scaleX
+        let y = -80 * (i - 1) * scaleY
+        let card = newCard(x, y, nextCardCode(), false)
         card.typeGroup = 'side'
         sideCards.push(card)
     }
-    for(let i=1;i<=4;i++){
-        let x = 56 * (i-3)
-        let y = 80
-        let card = newCard(x, y,cardCode(i,14), true)
+    for (let i = 1; i <= 4; i++) {
+        let x = 56 * (i - 3) * scaleX
+        let y = 80 * scaleY
+        let card = newCard(x, y, cardCode(i, 14), true)
         card.typeGroup = 'run'
-        onClick({target:card})
+        onClick({ target: card })
         runCards.push(card)
     }
-    for (let i=0;i<cardCodes.length-cardCodeIndex;i++){
-        let x = 56 * 5
-        let y = 60 + i
+    for (let i = 0; i < cardCodes.length - cardCodeIndex; i++) {
+        let x = 56 * 3 * scaleX
+        let y = (60 + i) * scaleY
         let card = newCard(x, y, nextCardCode(), false)
         card.typeGroup = 'hand'
-        card.on('mouseup',run)
-        card.on('touchend',run)
+        card.on('mouseup', run)
+        card.on('touchend', run)
         handCards.push(card)
     }
 }
@@ -231,18 +238,18 @@ function newCard(x, y, code) {
 let cardCodes = []
 let cardCodeIndex = 0
 
-function generateAllCards(){
+function generateAllCards() {
     cardCodes = []
     cardCodeIndex = 0
-    for(let suit=1;suit<=4;suit++){
-        for(let num=2;num<=13;num++){
-            cardCodes.push(cardCode(suit,num))
+    for (let suit = 1; suit <= 4; suit++) {
+        for (let num = 2; num <= 13; num++) {
+            cardCodes.push(cardCode(suit, num))
         }
     }
     cardCodes = shuffle(cardCodes)
 }
 
-function nextCardCode(){
+function nextCardCode() {
     return cardCodes[++cardCodeIndex]
 }
 
@@ -279,39 +286,39 @@ function onClick(event) {
     }
 }
 
-function checkLogic(card){
+function checkLogic(card) {
     const code = card.showCode === -1 ? 0 : card.showCode
     const num = code & 0xf
     const suit = code >> 4
-    let {inner} = card
-    if(inner.euler.y==0 && !card.logicChecked){
+    let { inner } = card
+    if (inner.euler.y == 0 && !card.logicChecked) {
         card.logicChecked = true
-        switch(card.typeGroup){
+        switch (card.typeGroup) {
             case 'hand':
-                let runCard = runCards[suit-1]
-                if(runCard!= null){
+                let runCard = runCards[suit - 1]
+                if (runCard != null) {
                     runCard.rank++
-                    runCard.position3d.y -= 80 
-                    if(runCard.rank>=5){
+                    runCard.position3d.y -= 80 * scaleY
+                    if (runCard.rank >= 5) {
                         gameOver = true
                     }
                     let openSideCard = true
-                    for(let i=0;i<runCards.length;i++){
+                    for (let i = 0; i < runCards.length; i++) {
                         let runCard = runCards[i]
-                        if(runCard.rank<=sideCardIndex){
+                        if (runCard.rank <= sideCardIndex) {
                             openSideCard = false
                         }
                     }
-                    if(openSideCard){
-                        onClick({target:sideCards[sideCardIndex++]})
+                    if (openSideCard) {
+                        onClick({ target: sideCards[sideCardIndex++] })
                     }
                 }
                 break;
             case 'side':
-                let runCard2 = runCards[suit-1]
-                if(runCard2!= null){
+                let runCard2 = runCards[suit - 1]
+                if (runCard2 != null) {
                     runCard2.rank--
-                    runCard2.position3d.y += 80
+                    runCard2.position3d.y += 80 * scaleY
                 }
                 break;
             case 'run':
@@ -320,18 +327,18 @@ function checkLogic(card){
     }
 }
 
-function run(){
-    if(gameOver){
+function run() {
+    if (gameOver) {
         generateAllCards()
         dealHand()
         gameOver = false
         return
     }
-    if(currentCard!=null){
+    if (currentCard != null) {
         currentCard.visible = false
     }
-    currentCard = handCards[handCards.length-handIndex-1]
-    onClick({target:currentCard})
+    currentCard = handCards[handCards.length - handIndex - 1]
+    onClick({ target: currentCard })
     handIndex++
 }
 
@@ -339,7 +346,7 @@ function run(){
 
 function addText(txt) {
     const style = new PIXI.TextStyle({
-        fontSize: 30,
+        fontSize: 30* scaleX,
         fontFamily: 'Arial',
         fill: 'gray',
         dropShadow: true,
@@ -348,8 +355,8 @@ function addText(txt) {
         wordWrap: false,
     })
     const basicText = new PIXI.Text(txt, style)
-    basicText.x = 65 * 6
-    basicText.y = 80
+    basicText.x = 73 * 3 * scaleX
+    basicText.y = 80 * scaleY
     basicText.visible = true
     camera.addChild(basicText)
 }
@@ -359,7 +366,7 @@ function onAssetsLoaded() {
     // app.stage.addChildAt(new PIXI.Sprite(loader.resources.table.texture), 0)
     generateAllCards()
     dealHand()
-    addText('Tap on cards')
+    addText('Click!')
     // start animating
     app.start()
 }
